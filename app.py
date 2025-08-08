@@ -1,587 +1,113 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🐍 Alphabet Snake Game</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            padding: 10px;
-        }
-        
-        .game-container {
-            text-align: center;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            max-width: 90vw;
-        }
-        
-        h1 {
-            font-size: 2.5em;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
-            background-size: 200% 200%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: gradient 3s ease infinite;
-        }
-
-        @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        
-        .game-info {
-            display: flex;
-            justify-content: space-between;
-            margin: 20px 0;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-        
-        .score, .word-display {
-            font-size: 1.2em;
-            font-weight: bold;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 10px 20px;
-            border-radius: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        canvas {
-            border: 3px solid #fff;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-            background: #111;
-            margin: 20px 0;
-            max-width: 100%;
-            width: 100%;
-            height: auto;
-        }
-        
-        .controls {
-            margin: 20px 0;
-            font-size: 16px;
-            opacity: 0.9;
-            line-height: 1.5;
-        }
-        
-        .game-over {
-            font-size: 2em;
-            color: #ff4757;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-            margin: 20px 0;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-        
-        .btn {
-            padding: 15px 30px;
-            font-size: 18px;
-            background: linear-gradient(45deg, #4CAF50, #45a049);
-            color: white;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            margin: 10px;
-            font-weight: bold;
-        }
-        
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-        }
-
-        .btn:active {
-            transform: translateY(-1px);
-        }
-
-        .mobile-controls {
-            display: none;
-            grid-template-areas: 
-                ". up ."
-                "left . right"
-                ". down .";
-            grid-gap: 15px;
-            margin: 30px auto;
-            max-width: 250px;
-        }
-        
-        .mobile-btn {
-            padding: 20px;
-            font-size: 24px;
-            background: linear-gradient(45deg, #2980b9, #3498db);
-            color: white;
-            border: none;
-            border-radius: 15px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            font-weight: bold;
-            min-width: 60px;
-            min-height: 60px;
-        }
-
-        .mobile-btn:hover, .mobile-btn:active {
-            background: linear-gradient(45deg, #3498db, #2980b9);
-            transform: scale(0.95);
-        }
-
-        .mobile-btn.up { grid-area: up; }
-        .mobile-btn.down { grid-area: down; }
-        .mobile-btn.left { grid-area: left; }
-        .mobile-btn.right { grid-area: right; }
-        
-        .loading {
-            color: #4ecdc4;
-            font-size: 18px;
-            margin: 20px 0;
-        }
-
-        .instructions {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 20px;
-            margin: 20px 0;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .instructions h3 {
-            margin-bottom: 15px;
-            color: #4ecdc4;
-        }
-
-        .instructions p {
-            margin: 8px 0;
-            line-height: 1.4;
-        }
-        
-        @media (max-width: 768px) {
-            .mobile-controls {
-                display: grid;
-            }
-            
-            .controls {
-                display: none;
-            }
-
-            h1 {
-                font-size: 2em;
-            }
-            
-            canvas {
-                max-width: calc(100vw - 60px);
-                width: calc(100vw - 60px);
-            }
-
-            .game-container {
-                padding: 20px;
-                max-width: 95vw;
-            }
-
-            .game-info {
-                justify-content: center;
-            }
-        }
-
-        @media (max-width: 480px) {
-            h1 {
-                font-size: 1.5em;
-            }
-            
-            .btn {
-                padding: 12px 24px;
-                font-size: 16px;
-            }
-
-            .mobile-btn {
-                padding: 15px;
-                font-size: 20px;
-                min-width: 50px;
-                min-height: 50px;
-            }
-
-            canvas {
-                max-width: calc(100vw - 40px);
-                width: calc(100vw - 40px);
-            }
-
-            .game-container {
-                padding: 15px;
-                max-width: 98vw;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="game-container">
-        <h1>🐍 Alphabet Snake Game</h1>
-        
-        <div class="game-info">
-            <div class="score">Score: <span id="score">0</span></div>
-            <div class="word-display">Word: <span id="word">-</span></div>
-        </div>
-        
-        <canvas id="gameCanvas" width="640" height="480"></canvas>
-        
-        <div id="loadingMsg" class="loading">Loading game...</div>
-        <div id="gameOver" class="game-over" style="display: none;">🎮 Game Over! 🎮</div>
-        
-        <div class="controls">
-            🖥️ Desktop: Use arrow keys to control the snake<br>
-            📱 Mobile: Use the buttons below
-        </div>
-        
-        <div class="mobile-controls">
-            <button class="mobile-btn up" onclick="changeDirection('UP')">↑</button>
-            <button class="mobile-btn left" onclick="changeDirection('LEFT')">←</button>
-            <button class="mobile-btn right" onclick="changeDirection('RIGHT')">→</button>
-            <button class="mobile-btn down" onclick="changeDirection('DOWN')">↓</button>
-        </div>
-        
-        <button class="btn" onclick="resetGame()">🎮 New Game</button>
-        
-        <div class="instructions">
-            <h3>📋 How to Play:</h3>
-            <p>🐍 Control the snake to collect letters</p>
-            <p>📝 Build words by collecting letters in order</p>
-            <p>🎯 Each letter gives you 10 points</p>
-            <p>💀 Don't hit walls or yourself!</p>
-        </div>
-    </div>
-
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const CELL_SIZE = 20;
-        const GRID_WIDTH = canvas.width / CELL_SIZE;
-        const GRID_HEIGHT = canvas.height / CELL_SIZE;
-
-        let gameState = null;
-        let gameRunning = false;
-        let gameInterval = null;
-
-        // Initialize game state locally (no server needed!)
-        function initGameState() {
-            gameState = {
-                snake: [[5, 5]],
-                direction: 'RIGHT',
-                food_pos: [10, 10],
-                food_letter: 'A',
-                collected_letters: [],
-                game_over: false,
-                score: 0
-            };
-            generateNewFood();
-        }
-
-        // Generate new food position and letter
-        function generateNewFood() {
-            let newPos;
-            let attempts = 0;
-            do {
-                newPos = [
-                    Math.floor(Math.random() * GRID_WIDTH), 
-                    Math.floor(Math.random() * GRID_HEIGHT)
-                ];
-                attempts++;
-            } while (
-                attempts < 100 && 
-                gameState.snake.some(segment => segment[0] === newPos[0] && segment[1] === newPos[1])
-            );
-            
-            gameState.food_pos = newPos;
-            gameState.food_letter = String.fromCharCode(65 + Math.floor(Math.random() * 26)); // Random A-Z
-        }
-
-        // Get opposite direction (prevent reversing)
-        function getOppositeDirection(dir) {
-            const opposites = {'UP': 'DOWN', 'DOWN': 'UP', 'LEFT': 'RIGHT', 'RIGHT': 'LEFT'};
-            return opposites[dir];
-        }
-
-        // FIXED: Move snake locally (no API calls = no lag!)
-        function moveSnake(direction = null) {
-            if (!gameRunning || gameState.game_over) return;
-            
-            // Change direction if provided and not opposite
-            if (direction && direction !== getOppositeDirection(gameState.direction)) {
-                gameState.direction = direction;
-            }
-            
-            // Calculate movement
-            const dx = gameState.direction === 'RIGHT' ? 1 : gameState.direction === 'LEFT' ? -1 : 0;
-            const dy = gameState.direction === 'DOWN' ? 1 : gameState.direction === 'UP' ? -1 : 0;
-            
-            const head = gameState.snake[0];
-            const newHead = [head[0] + dx, head[1] + dy];
-            
-            // Check wall collision
-            if (newHead[0] < 0 || newHead[0] >= GRID_WIDTH || 
-                newHead[1] < 0 || newHead[1] >= GRID_HEIGHT) {
-                gameState.game_over = true;
-                updateDisplay();
-                stopGame();
-                return;
-            }
-            
-            // Check self collision
-            if (gameState.snake.some(segment => segment[0] === newHead[0] && segment[1] === newHead[1])) {
-                gameState.game_over = true;
-                updateDisplay();
-                stopGame();
-                return;
-            }
-            
-            gameState.snake.unshift(newHead);
-            
-            // Check food collision
-            if (newHead[0] === gameState.food_pos[0] && newHead[1] === gameState.food_pos[1]) {
-                gameState.collected_letters.push(gameState.food_letter);
-                gameState.score += 10;
-                generateNewFood();
-            } else {
-                gameState.snake.pop(); // Remove tail
-            }
-            
-            updateDisplay();
-        }
-
-        // Reset game locally
-        function resetGame() {
-            stopGame();
-            initGameState();
-            updateDisplay();
-            startGame();
-        }
-
-        // Display functions (unchanged - these were already good)
-        function updateDisplay() {
-            if (!gameState) return;
-
-            // Clear canvas
-            ctx.fillStyle = '#111';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw grid (subtle)
-            ctx.strokeStyle = '#222';
-            ctx.lineWidth = 0.5;
-            for (let i = 0; i <= GRID_WIDTH; i++) {
-                ctx.beginPath();
-                ctx.moveTo(i * CELL_SIZE, 0);
-                ctx.lineTo(i * CELL_SIZE, canvas.height);
-                ctx.stroke();
-            }
-            for (let i = 0; i <= GRID_HEIGHT; i++) {
-                ctx.beginPath();
-                ctx.moveTo(0, i * CELL_SIZE);
-                ctx.lineTo(canvas.width, i * CELL_SIZE);
-                ctx.stroke();
-            }
-
-            // Draw food with glow effect
-            const foodX = gameState.food_pos[0] * CELL_SIZE;
-            const foodY = gameState.food_pos[1] * CELL_SIZE;
-            
-            // Glow effect for food
-            ctx.shadowColor = '#ff4757';
-            ctx.shadowBlur = 15;
-            ctx.fillStyle = '#ff4757';
-            ctx.fillRect(foodX + 2, foodY + 2, CELL_SIZE - 4, CELL_SIZE - 4);
-            ctx.shadowBlur = 0;
-
-            // Food letter
-            ctx.fillStyle = 'white';
-            ctx.font = 'bold 16px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(
-                gameState.food_letter,
-                foodX + CELL_SIZE/2,
-                foodY + CELL_SIZE/2
-            );
-
-            // Draw snake
-            gameState.snake.forEach((segment, index) => {
-                const x = segment[0] * CELL_SIZE;
-                const y = segment[1] * CELL_SIZE;
-                
-                // Snake body with gradient
-                const isHead = index === 0;
-                if (isHead) {
-                    ctx.fillStyle = '#2ecc71';
-                    ctx.shadowColor = '#2ecc71';
-                    ctx.shadowBlur = 10;
-                } else {
-                    ctx.fillStyle = '#27ae60';
-                    ctx.shadowBlur = 5;
-                }
-                
-                ctx.fillRect(x + 1, y + 1, CELL_SIZE - 2, CELL_SIZE - 2);
-                ctx.shadowBlur = 0;
-
-                // Letter on snake segment
-                let letter = '?';
-                if (gameState.collected_letters.length > 0) {
-                    if (index >= gameState.snake.length - gameState.collected_letters.length) {
-                        const letterIndex = index - (gameState.snake.length - gameState.collected_letters.length);
-                        letter = gameState.collected_letters[letterIndex] || '?';
-                    }
-                }
-
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 14px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(letter, x + CELL_SIZE/2, y + CELL_SIZE/2);
-            });
-
-            // Update UI elements
-            document.getElementById('score').textContent = gameState.score;
-            document.getElementById('word').textContent = 
-                gameState.collected_letters.length > 0 ? gameState.collected_letters.join('') : '-';
-            
-            // Show/hide game over
-            const gameOverEl = document.getElementById('gameOver');
-            if (gameState.game_over) {
-                gameOverEl.style.display = 'block';
-            } else {
-                gameOverEl.style.display = 'none';
-            }
-        }
-
-        function hideLoading() {
-            document.getElementById('loadingMsg').style.display = 'none';
-        }
-
-        // Game control functions
-        function changeDirection(direction) {
-            moveSnake(direction);
-        }
-
-        function startGame() {
-            gameRunning = true;
-            if (gameInterval) clearInterval(gameInterval);
-            
-            gameInterval = setInterval(() => {
-                if (gameState && !gameState.game_over) {
-                    moveSnake();
-                }
-            }, 200); // Faster movement (was 500ms, now 200ms)
-        }
-
-        function stopGame() {
-            gameRunning = false;
-            if (gameInterval) {
-                clearInterval(gameInterval);
-                gameInterval = null;
-            }
-        }
-
-        // Event listeners (unchanged)
-        document.addEventListener('keydown', (e) => {
-            const keyMap = {
-                'ArrowUp': 'UP',
-                'ArrowDown': 'DOWN',
-                'ArrowLeft': 'LEFT',
-                'ArrowRight': 'RIGHT',
-                'w': 'UP',
-                'W': 'UP',
-                's': 'DOWN',
-                'S': 'DOWN',
-                'a': 'LEFT',
-                'A': 'LEFT',
-                'd': 'RIGHT',
-                'D': 'RIGHT'
-            };
-            
-            if (keyMap[e.key]) {
-                e.preventDefault();
-                changeDirection(keyMap[e.key]);
-            }
-            
-            if (e.key === ' ') {
-                e.preventDefault();
-                if (gameState && gameState.game_over) {
-                    resetGame();
-                }
-            }
-        });
-
-        // Touch events for mobile (unchanged)
-        let touchStartX = 0;
-        let touchStartY = 0;
-
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            touchStartX = touch.clientX;
-            touchStartY = touch.clientY;
-        });
-
-        canvas.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            if (!e.changedTouches) return;
-            
-            const touch = e.changedTouches[0];
-            const deltaX = touch.clientX - touchStartX;
-            const deltaY = touch.clientY - touchStartY;
-            
-            const minSwipeDistance = 30;
-            
-            if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                if (Math.abs(deltaX) > minSwipeDistance) {
-                    changeDirection(deltaX > 0 ? 'RIGHT' : 'LEFT');
-                }
-            } else {
-                if (Math.abs(deltaY) > minSwipeDistance) {
-                    changeDirection(deltaY > 0 ? 'DOWN' : 'UP');
-                }
-            }
-        });
-
-        // Initialize game when page loads
-        window.addEventListener('load', () => {
-            initGameState();
-            updateDisplay();
-            hideLoading();
-            startGame();
-        });
-
-        // Handle visibility changes (pause when tab is hidden)
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                stopGame();
-            } else if (gameState && !gameState.game_over) {
-                startGame();
-            }
-        });
-    </script>
-</body>
-</html>
+from flask import Flask, render_template, jsonify, request
+import random
+import string
+import os
+app = Flask(name)
+# Game state - stored in memory
+game_state = {
+    'snake': [(5, 5)],
+    'direction': 'RIGHT',
+    'food_pos': (10, 10),
+    'food_letter': 'A',
+    'collected_letters': [],
+    'game_over': False,
+    'score': 0
+}
+DIRECTIONS = {
+    "UP": (0, -1),
+    "DOWN": (0, 1),
+    "LEFT": (-1, 0),
+    "RIGHT": (1, 0)
+}
+WIDTH, HEIGHT = 32, 24  # Grid size (32x24 cells)
+def get_new_letter():
+    """Generate a new food position and letter"""
+    attempts = 0
+    while attempts < 100:  # Prevent infinite loop
+        pos = (random.randint(0, WIDTH - 1), random.randint(0, HEIGHT - 1))
+        if pos not in game_state['snake']:
+            break
+        attempts += 1
+    if attempts >= 100:
+        # If we can't find a free position, game over
+        pos = (0, 0)
+    letter = random.choice(string.ascii_uppercase)
+    return pos, letter
+def reset_game():
+    """Reset the game to initial state"""
+    global game_state
+    game_state = {
+        'snake': [(5, 5)],
+        'direction': 'RIGHT',
+        'food_pos': (10, 10),
+        'food_letter': 'A',
+        'collected_letters': [],
+        'game_over': False,
+        'score': 0
+    }
+    # Generate first food
+    game_state['food_pos'], game_state['food_letter'] = get_new_letter()
+@app.route('/')
+def index():
+    """Main game page"""
+    return render_template('index.html')
+@app.route('/api/game_state')
+def get_game_state():
+    """Get current game state"""
+    return jsonify(game_state)
+@app.route('/api/move', methods=['POST'])
+def move():
+    """Move the snake"""
+    if game_state['game_over']:
+        return jsonify(game_state)
+    try:
+        data = request.get_json()
+        new_direction = data.get('direction') if data else None
+        # Prevent reverse direction
+        opposite = {'UP': 'DOWN', 'DOWN': 'UP', 'LEFT': 'RIGHT', 'RIGHT': 'LEFT'}
+        if new_direction and new_direction in DIRECTIONS and new_direction != opposite.get(game_state['direction']):
+            game_state['direction'] = new_direction
+        # Move snake
+        dx, dy = DIRECTIONS[game_state['direction']]
+        head_x, head_y = game_state['snake'][0]
+        new_head = (head_x + dx, head_y + dy)
+        # Check wall collision
+        if (new_head[0] < 0 or new_head[0] >= WIDTH or
+            new_head[1] < 0 or new_head[1] >= HEIGHT):
+            game_state['game_over'] = True
+            return jsonify(game_state)
+        # Check self collision
+        if new_head in game_state['snake']:
+            game_state['game_over'] = True
+            return jsonify(game_state)
+        game_state['snake'].insert(0, new_head)
+        # Check food collision
+        if new_head == game_state['food_pos']:
+            game_state['collected_letters'].append(game_state['food_letter'])
+            game_state['score'] += 10
+            game_state['food_pos'], game_state['food_letter'] = get_new_letter()
+        else:
+            game_state['snake'].pop()  # Remove tail
+    except Exception as e:
+        print(f"Error in move: {e}")
+    return jsonify(game_state)
+@app.route('/api/reset', methods=['POST'])
+def reset():
+    """Reset the game"""
+    reset_game()
+    return jsonify(game_state)
+@app.route('/health')
+def health():
+    """Health check endpoint"""
+    return "OK"
+@app.errorhandler(404)
+def not_found(error):
+    """Handle 404 errors"""
+    return "Page not found. Go to the main page: <a href='/'>Play Snake Game</a>", 404
+if name == 'main':
+    # Initialize the game
+    reset_game()
+    # Get port from environment variable (Render sets this)
+    port = int(os.environ.get('PORT', 10000))
+    # Run the app
+    app.run(host='0.0.0.0', port=port, debug=False)
