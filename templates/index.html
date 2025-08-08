@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alphabet Snake Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+        
+        .game-container {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        canvas {
+            border: 3px solid #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            background: #000;
+            margin: 20px 0;
+        }
+        
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .controls {
+            margin: 20px 0;
+            font-size: 16px;
+            opacity: 0.8;
+        }
+        
+        .collected-letters {
+            margin: 15px 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .game-over {
+            font-size: 28px;
+            color: #ff4757;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin: 20px 0;
+        }
+        
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .mobile-controls {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            grid-gap: 10px;
+            margin: 20px 0;
+            max-width: 200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .mobile-btn {
+            padding: 15px;
+            font-size: 18px;
+            background: #2980b9;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-controls {
+                display: grid;
+            }
+            .controls {
+                display: none;
+            }
+            canvas {
+                max-width: 90vw;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🐍 Alphabet Snake Game</h1>
+        <div class="score">Score: <span id="score">0</span></div>
+        <div class="collected-letters">Word: <span id="word"></span></div>
+        
+        <canvas id="gameCanvas" width="640" height="480"></canvas>
+        
+        <div class="controls">
+            Use arrow keys to control the snake
+        </div>
+        
+        <div class="mobile-controls">
+            <div></div>
+            <button class="mobile-btn" onclick="changeDirection('UP')">↑</button>
+            <div></div>
+            <button class="mobile-btn" onclick="changeDirection('LEFT')">←</button>
+            <div></div>
+            <button class="mobile-btn" onclick="changeDirection('RIGHT')">→</button>
+            <div></div>
+            <button class="mobile-btn" onclick="changeDirection('DOWN')">↓</button>
+            <div></div>
+        </div>
+        
+        <div id="gameOver" class="game-over" style="display: none;">Game Over!</div>
+        <button onclick="resetGame()">New Game</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const CELL_SIZE = 20;
+        const GRID_WIDTH = canvas.width / CELL_SIZE;
+        const GRID_HEIGHT = canvas.height / CELL_SIZE;
+
+        let gameState = null;
+
+        async function fetchGameState() {
+            const response = await fetch('/game_state');
+            gameState = await response.json();
+            updateDisplay();
+        }
+
+        async function move(direction = null) {
+            const response = await fetch('/move', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({direction: direction})
+            });
+            gameState = await response.json();
+            updateDisplay();
+        }
+
+        async function resetGame() {
+            const response = await fetch('/reset', {method: 'POST'});
+            gameState = await response.json();
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            // Clear canvas
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (!gameState) return;
+
+            // Draw food
+            ctx.fillStyle = '#ff4757';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            const foodX = gameState.food_pos[0] * CELL_SIZE + CELL_SIZE/2;
+            const foodY = gameState.food_pos[1] * CELL_SIZE + CELL_SIZE/2 + 6;
+            ctx.fillText(gameState.food_letter, foodX, foodY);
+
+            // Draw snake
+            ctx.fillStyle = '#2ecc71';
+            gameState.snake.forEach((segment, index) => {
+                const x = segment[0] * CELL_SIZE + CELL_SIZE/2;
+                const y = segment[1] * CELL_SIZE + CELL_SIZE/2 + 6;
+                
+                let letter = '?';
+                if (index < gameState.snake.length - gameState.collected_letters.length) {
+                    letter = '?';
+                } else {
+                    const letterIndex = index - (gameState.snake.length - gameState.collected_letters.length);
+                    letter = gameState.collected_letters[letterIndex] || '?';
+                }
+                
+                ctx.fillText(letter, x, y);
+            });
+
+            // Update UI
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('word').textContent = gameState.collected_letters.join('');
+            document.getElementById('gameOver').style.display = gameState.game_over ? 'block' : 'none';
+        }
+
+        function changeDirection(direction) {
+            move(direction);
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            const keyMap = {
+                'ArrowUp': 'UP',
+                'ArrowDown': 'DOWN',
+                'ArrowLeft': 'LEFT',
+                'ArrowRight': 'RIGHT'
+            };
+            
+            if (keyMap[e.key]) {
+                e.preventDefault();
+                changeDirection(keyMap[e.key]);
+            }
+        });
+
+        // Auto-move every 300ms
+        setInterval(() => {
+            if (gameState && !gameState.game_over) {
+                move();
+            }
+        }, 300);
+
+        // Initialize game
+        fetchGameState();
+    </script>
+</body>
+</html>
