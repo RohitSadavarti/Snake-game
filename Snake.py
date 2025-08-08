@@ -1,29 +1,20 @@
-import pygame
+from flask import Flask, render_template, jsonify, request
 import random
 import string
 
-# Initialize Pygame
-pygame.init()
+app = Flask(__name__)
 
-# Set up display
-WIDTH, HEIGHT = 640, 480
-CELL_SIZE = 20
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Alphabet Snake Game")
+# Game state
+game_state = {
+    'snake': [(5, 5)],
+    'direction': 'RIGHT',
+    'food_pos': (10, 10),
+    'food_letter': 'A',
+    'collected_letters': [],
+    'game_over': False,
+    'score': 0
+}
 
-# Fonts
-font = pygame.font.SysFont("Arial", 20)
-
-# Colors
-WHITE = (255, 255, 255)
-GREEN = (0, 255, 0)
-RED = (200, 0, 0)
-BLACK = (0, 0, 0)
-
-# Clock
-clock = pygame.time.Clock()
-
-# Directions
 DIRECTIONS = {
     "UP": (0, -1),
     "DOWN": (0, 1),
@@ -31,85 +22,77 @@ DIRECTIONS = {
     "RIGHT": (1, 0)
 }
 
-# Initial snake
-snake = [(5, 5)]  # one segment
-collected_letters = []  # grows as we collect food
-direction = "RIGHT"
+WIDTH, HEIGHT = 32, 24  # Grid size (32x24 cells)
 
-# Generate new food
 def get_new_letter():
     while True:
-        pos = (random.randint(0, (WIDTH // CELL_SIZE) - 1),
-               random.randint(0, (HEIGHT // CELL_SIZE) - 1))
-        if pos not in snake:
+        pos = (random.randint(0, WIDTH - 1), random.randint(0, HEIGHT - 1))
+        if pos not in game_state['snake']:
             break
     letter = random.choice(string.ascii_uppercase)
     return pos, letter
 
-food_pos, food_letter = get_new_letter()
+@app.route('/')
+def index():
+    return render_template('index.html')
 
-# Game loop
-running = True
-while running:
-    screen.fill(BLACK)
+@app.route('/game_state')
+def get_game_state():
+    return jsonify(game_state)
 
-    # Event handling
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-
-    # Controls
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_UP] and direction != "DOWN":
-        direction = "UP"
-    elif keys[pygame.K_DOWN] and direction != "UP":
-        direction = "DOWN"
-    elif keys[pygame.K_LEFT] and direction != "RIGHT":
-        direction = "LEFT"
-    elif keys[pygame.K_RIGHT] and direction != "LEFT":
-        direction = "RIGHT"
-
+@app.route('/move', methods=['POST'])
+def move():
+    if game_state['game_over']:
+        return jsonify(game_state)
+    
+    data = request.json
+    new_direction = data.get('direction')
+    
+    # Prevent reverse direction
+    opposite = {'UP': 'DOWN', 'DOWN': 'UP', 'LEFT': 'RIGHT', 'RIGHT': 'LEFT'}
+    if new_direction and new_direction != opposite.get(game_state['direction']):
+        game_state['direction'] = new_direction
+    
     # Move snake
-    dx, dy = DIRECTIONS[direction]
-    head_x, head_y = snake[0]
+    dx, dy = DIRECTIONS[game_state['direction']]
+    head_x, head_y = game_state['snake'][0]
     new_head = (head_x + dx, head_y + dy)
-
+    
     # Check collision
-    if (new_head[0] < 0 or new_head[0] >= WIDTH // CELL_SIZE or
-        new_head[1] < 0 or new_head[1] >= HEIGHT // CELL_SIZE or
-        new_head in snake):
-        print("Game Over!")
-        running = False
-        continue
-
-    snake.insert(0, new_head)
-
-    # Eat food
-    if new_head == food_pos:
-        collected_letters.append(food_letter)
-        food_pos, food_letter = get_new_letter()
+    if (new_head[0] < 0 or new_head[0] >= WIDTH or
+        new_head[1] < 0 or new_head[1] >= HEIGHT or
+        new_head in game_state['snake']):
+        game_state['game_over'] = True
+        return jsonify(game_state)
+    
+    game_state['snake'].insert(0, new_head)
+    
+    # Check food collision
+    if new_head == game_state['food_pos']:
+        game_state['collected_letters'].append(game_state['food_letter'])
+        game_state['score'] += 10
+        game_state['food_pos'], game_state['food_letter'] = get_new_letter()
     else:
-        snake.pop()  # tail movement
+        game_state['snake'].pop()
+    
+    return jsonify(game_state)
 
-    # Draw food
-    food_text = font.render(food_letter, True, RED)
-    screen.blit(food_text, (food_pos[0]*CELL_SIZE, food_pos[1]*CELL_SIZE))
+@app.route('/reset', methods=['POST'])
+def reset():
+    global game_state
+    game_state = {
+        'snake': [(5, 5)],
+        'direction': 'RIGHT',
+        'food_pos': (10, 10),
+        'food_letter': random.choice(string.ascii_uppercase),
+        'collected_letters': [],
+        'game_over': False,
+        'score': 0
+    }
+    game_state['food_pos'], game_state['food_letter'] = get_new_letter()
+    return jsonify(game_state)
 
-    # Draw snake
-    for i, segment in enumerate(snake):
-        if i == 0 and len(collected_letters) == 0:
-            # First step: head only
-            letter = "?"
-        elif i < len(snake) - len(collected_letters):
-            letter = "?"
-        else:
-            # Show collected letters at tail in order
-            letter_index = i - (len(snake) - len(collected_letters))
-            letter = collected_letters[letter_index]
-        text = font.render(letter, True, GREEN)
-        screen.blit(text, (segment[0]*CELL_SIZE, segment[1]*CELL_SIZE))
-
-    pygame.display.update()
-    clock.tick(10)
-
-pygame.quit()
+if __name__ == '__main__':
+    # Initialize first food
+    game_state['food_pos'], game_state['food_letter'] = get_new_letter()
+    app.run(host='0.0.0.0', port=10000)
