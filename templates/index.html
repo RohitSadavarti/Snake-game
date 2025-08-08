@@ -3,111 +3,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alphabet Snake Game</title>
+    <title>🐍 Alphabet Snake Game</title>
     <style>
-        body {
+        * {
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            font-family: Arial, sans-serif;
             color: white;
+            padding: 10px;
         }
         
         .game-container {
             text-align: center;
             background: rgba(0, 0, 0, 0.3);
-            border-radius: 15px;
+            border-radius: 20px;
             padding: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 90vw;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient 3s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .score, .word-display {
+            font-size: 1.2em;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
         canvas {
             border: 3px solid #fff;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            background: #000;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            background: #111;
             margin: 20px 0;
-        }
-        
-        .score {
-            font-size: 24px;
-            font-weight: bold;
-            margin: 10px 0;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            max-width: 100%;
+            height: auto;
         }
         
         .controls {
             margin: 20px 0;
             font-size: 16px;
-            opacity: 0.8;
-        }
-        
-        .collected-letters {
-            margin: 15px 0;
-            font-size: 18px;
-            font-weight: bold;
+            opacity: 0.9;
+            line-height: 1.5;
         }
         
         .game-over {
-            font-size: 28px;
+            font-size: 2em;
             color: #ff4757;
             font-weight: bold;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
             margin: 20px 0;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
         
-        button {
-            padding: 12px 24px;
-            font-size: 16px;
-            background: #4CAF50;
+        .btn {
+            padding: 15px 30px;
+            font-size: 18px;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
             color: white;
             border: none;
-            border-radius: 25px;
+            border-radius: 30px;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            margin: 10px;
+            font-weight: bold;
         }
         
-        button:hover {
-            background: #45a049;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
         }
 
         .mobile-controls {
             display: none;
-            grid-template-columns: repeat(3, 1fr);
-            grid-gap: 10px;
-            margin: 20px 0;
-            max-width: 200px;
-            margin-left: auto;
-            margin-right: auto;
+            grid-template-areas: 
+                ". up ."
+                "left . right"
+                ". down .";
+            grid-gap: 15px;
+            margin: 30px auto;
+            max-width: 250px;
         }
         
         .mobile-btn {
-            padding: 15px;
-            font-size: 18px;
-            background: #2980b9;
+            padding: 20px;
+            font-size: 24px;
+            background: linear-gradient(45deg, #2980b9, #3498db);
             color: white;
             border: none;
-            border-radius: 10px;
+            border-radius: 15px;
             cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            font-weight: bold;
+            min-width: 60px;
+            min-height: 60px;
+        }
+
+        .mobile-btn:hover, .mobile-btn:active {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            transform: scale(0.95);
+        }
+
+        .mobile-btn.up { grid-area: up; }
+        .mobile-btn.down { grid-area: down; }
+        .mobile-btn.left { grid-area: left; }
+        .mobile-btn.right { grid-area: right; }
+        
+        .loading {
+            color: #4ecdc4;
+            font-size: 18px;
+            margin: 20px 0;
+        }
+
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .instructions h3 {
+            margin-bottom: 15px;
+            color: #4ecdc4;
+        }
+
+        .instructions p {
+            margin: 8px 0;
+            line-height: 1.4;
         }
         
         @media (max-width: 768px) {
             .mobile-controls {
                 display: grid;
             }
+            
             .controls {
                 display: none;
             }
+
+            h1 {
+                font-size: 2em;
+            }
+            
             canvas {
-                max-width: 90vw;
-                height: auto;
+                max-width: 95vw;
+            }
+
+            .game-container {
+                padding: 20px;
+            }
+
+            .game-info {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5em;
+            }
+            
+            .btn {
+                padding: 12px 24px;
+                font-size: 16px;
+            }
+
+            .mobile-btn {
+                padding: 15px;
+                font-size: 20px;
+                min-width: 50px;
+                min-height: 50px;
             }
         }
     </style>
@@ -115,29 +229,38 @@
 <body>
     <div class="game-container">
         <h1>🐍 Alphabet Snake Game</h1>
-        <div class="score">Score: <span id="score">0</span></div>
-        <div class="collected-letters">Word: <span id="word"></span></div>
+        
+        <div class="game-info">
+            <div class="score">Score: <span id="score">0</span></div>
+            <div class="word-display">Word: <span id="word">-</span></div>
+        </div>
         
         <canvas id="gameCanvas" width="640" height="480"></canvas>
         
+        <div id="loadingMsg" class="loading">Loading game...</div>
+        <div id="gameOver" class="game-over" style="display: none;">🎮 Game Over! 🎮</div>
+        
         <div class="controls">
-            Use arrow keys to control the snake
+            🖥️ Desktop: Use arrow keys to control the snake<br>
+            📱 Mobile: Use the buttons below
         </div>
         
         <div class="mobile-controls">
-            <div></div>
-            <button class="mobile-btn" onclick="changeDirection('UP')">↑</button>
-            <div></div>
-            <button class="mobile-btn" onclick="changeDirection('LEFT')">←</button>
-            <div></div>
-            <button class="mobile-btn" onclick="changeDirection('RIGHT')">→</button>
-            <div></div>
-            <button class="mobile-btn" onclick="changeDirection('DOWN')">↓</button>
-            <div></div>
+            <button class="mobile-btn up" onclick="changeDirection('UP')">↑</button>
+            <button class="mobile-btn left" onclick="changeDirection('LEFT')">←</button>
+            <button class="mobile-btn right" onclick="changeDirection('RIGHT')">→</button>
+            <button class="mobile-btn down" onclick="changeDirection('DOWN')">↓</button>
         </div>
         
-        <div id="gameOver" class="game-over" style="display: none;">Game Over!</div>
-        <button onclick="resetGame()">New Game</button>
+        <button class="btn" onclick="resetGame()">🎮 New Game</button>
+        
+        <div class="instructions">
+            <h3>📋 How to Play:</h3>
+            <p>🐍 Control the snake to collect letters</p>
+            <p>📝 Build words by collecting letters in order</p>
+            <p>🎯 Each letter gives you 10 points</p>
+            <p>💀 Don't hit walls or yourself!</p>
+        </div>
     </div>
 
     <script>
@@ -148,95 +271,260 @@
         const GRID_HEIGHT = canvas.height / CELL_SIZE;
 
         let gameState = null;
+        let gameRunning = false;
+        let gameInterval = null;
 
+        // API functions
         async function fetchGameState() {
-            const response = await fetch('/game_state');
-            gameState = await response.json();
-            updateDisplay();
+            try {
+                const response = await fetch('/api/game_state');
+                if (!response.ok) throw new Error('Failed to fetch game state');
+                gameState = await response.json();
+                updateDisplay();
+                hideLoading();
+            } catch (error) {
+                console.error('Error fetching game state:', error);
+                showError('Failed to load game. Please refresh the page.');
+            }
         }
 
-        async function move(direction = null) {
-            const response = await fetch('/move', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({direction: direction})
-            });
-            gameState = await response.json();
-            updateDisplay();
+        async function moveSnake(direction = null) {
+            if (!gameRunning || (gameState && gameState.game_over)) return;
+            
+            try {
+                const response = await fetch('/api/move', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ direction: direction })
+                });
+                
+                if (!response.ok) throw new Error('Failed to move snake');
+                gameState = await response.json();
+                updateDisplay();
+            } catch (error) {
+                console.error('Error moving snake:', error);
+            }
         }
 
         async function resetGame() {
-            const response = await fetch('/reset', {method: 'POST'});
-            gameState = await response.json();
-            updateDisplay();
+            try {
+                const response = await fetch('/api/reset', { method: 'POST' });
+                if (!response.ok) throw new Error('Failed to reset game');
+                gameState = await response.json();
+                updateDisplay();
+                startGame();
+            } catch (error) {
+                console.error('Error resetting game:', error);
+                showError('Failed to reset game. Please refresh the page.');
+            }
         }
 
+        // Display functions
         function updateDisplay() {
-            // Clear canvas
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
             if (!gameState) return;
 
-            // Draw food
+            // Clear canvas
+            ctx.fillStyle = '#111';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid (subtle)
+            ctx.strokeStyle = '#222';
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i <= GRID_WIDTH; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * CELL_SIZE, 0);
+                ctx.lineTo(i * CELL_SIZE, canvas.height);
+                ctx.stroke();
+            }
+            for (let i = 0; i <= GRID_HEIGHT; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, i * CELL_SIZE);
+                ctx.lineTo(canvas.width, i * CELL_SIZE);
+                ctx.stroke();
+            }
+
+            // Draw food with glow effect
+            const foodX = gameState.food_pos[0] * CELL_SIZE;
+            const foodY = gameState.food_pos[1] * CELL_SIZE;
+            
+            // Glow effect for food
+            ctx.shadowColor = '#ff4757';
+            ctx.shadowBlur = 15;
             ctx.fillStyle = '#ff4757';
+            ctx.fillRect(foodX + 2, foodY + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+            ctx.shadowBlur = 0;
+
+            // Food letter
+            ctx.fillStyle = 'white';
             ctx.font = 'bold 16px Arial';
             ctx.textAlign = 'center';
-            const foodX = gameState.food_pos[0] * CELL_SIZE + CELL_SIZE/2;
-            const foodY = gameState.food_pos[1] * CELL_SIZE + CELL_SIZE/2 + 6;
-            ctx.fillText(gameState.food_letter, foodX, foodY);
+            ctx.textBaseline = 'middle';
+            ctx.fillText(
+                gameState.food_letter,
+                foodX + CELL_SIZE/2,
+                foodY + CELL_SIZE/2
+            );
 
             // Draw snake
-            ctx.fillStyle = '#2ecc71';
             gameState.snake.forEach((segment, index) => {
-                const x = segment[0] * CELL_SIZE + CELL_SIZE/2;
-                const y = segment[1] * CELL_SIZE + CELL_SIZE/2 + 6;
+                const x = segment[0] * CELL_SIZE;
+                const y = segment[1] * CELL_SIZE;
                 
-                let letter = '?';
-                if (index < gameState.snake.length - gameState.collected_letters.length) {
-                    letter = '?';
+                // Snake body with gradient
+                const isHead = index === 0;
+                if (isHead) {
+                    ctx.fillStyle = '#2ecc71';
+                    ctx.shadowColor = '#2ecc71';
+                    ctx.shadowBlur = 10;
                 } else {
-                    const letterIndex = index - (gameState.snake.length - gameState.collected_letters.length);
-                    letter = gameState.collected_letters[letterIndex] || '?';
+                    ctx.fillStyle = '#27ae60';
+                    ctx.shadowBlur = 5;
                 }
                 
-                ctx.fillText(letter, x, y);
+                ctx.fillRect(x + 1, y + 1, CELL_SIZE - 2, CELL_SIZE - 2);
+                ctx.shadowBlur = 0;
+
+                // Letter on snake segment
+                let letter = '?';
+                if (gameState.collected_letters.length > 0) {
+                    if (index >= gameState.snake.length - gameState.collected_letters.length) {
+                        const letterIndex = index - (gameState.snake.length - gameState.collected_letters.length);
+                        letter = gameState.collected_letters[letterIndex] || '?';
+                    }
+                }
+
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(letter, x + CELL_SIZE/2, y + CELL_SIZE/2);
             });
 
-            // Update UI
+            // Update UI elements
             document.getElementById('score').textContent = gameState.score;
-            document.getElementById('word').textContent = gameState.collected_letters.join('');
-            document.getElementById('gameOver').style.display = gameState.game_over ? 'block' : 'none';
+            document.getElementById('word').textContent = 
+                gameState.collected_letters.length > 0 ? gameState.collected_letters.join('') : '-';
+            
+            // Show/hide game over
+            const gameOverEl = document.getElementById('gameOver');
+            if (gameState.game_over) {
+                gameOverEl.style.display = 'block';
+                stopGame();
+            } else {
+                gameOverEl.style.display = 'none';
+            }
         }
 
+        function hideLoading() {
+            document.getElementById('loadingMsg').style.display = 'none';
+        }
+
+        function showError(message) {
+            document.getElementById('loadingMsg').textContent = message;
+            document.getElementById('loadingMsg').style.color = '#ff4757';
+        }
+
+        // Game control functions
         function changeDirection(direction) {
-            move(direction);
+            moveSnake(direction);
         }
 
-        // Keyboard controls
+        function startGame() {
+            gameRunning = true;
+            if (gameInterval) clearInterval(gameInterval);
+            
+            gameInterval = setInterval(() => {
+                if (gameState && !gameState.game_over) {
+                    moveSnake();
+                }
+            }, 250); // Move every 250ms
+        }
+
+        function stopGame() {
+            gameRunning = false;
+            if (gameInterval) {
+                clearInterval(gameInterval);
+                gameInterval = null;
+            }
+        }
+
+        // Event listeners
         document.addEventListener('keydown', (e) => {
             const keyMap = {
                 'ArrowUp': 'UP',
                 'ArrowDown': 'DOWN',
                 'ArrowLeft': 'LEFT',
-                'ArrowRight': 'RIGHT'
+                'ArrowRight': 'RIGHT',
+                'w': 'UP',
+                'W': 'UP',
+                's': 'DOWN',
+                'S': 'DOWN',
+                'a': 'LEFT',
+                'A': 'LEFT',
+                'd': 'RIGHT',
+                'D': 'RIGHT'
             };
             
             if (keyMap[e.key]) {
                 e.preventDefault();
                 changeDirection(keyMap[e.key]);
             }
+            
+            if (e.key === ' ') {
+                e.preventDefault();
+                if (gameState && gameState.game_over) {
+                    resetGame();
+                }
+            }
         });
 
-        // Auto-move every 300ms
-        setInterval(() => {
-            if (gameState && !gameState.game_over) {
-                move();
-            }
-        }, 300);
+        // Touch events for mobile
+        let touchStartX = 0;
+        let touchStartY = 0;
 
-        // Initialize game
-        fetchGameState();
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (!e.changedTouches) return;
+            
+            const touch = e.changedTouches[0];
+            const deltaX = touch.clientX - touchStartX;
+            const deltaY = touch.clientY - touchStartY;
+            
+            const minSwipeDistance = 30;
+            
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                if (Math.abs(deltaX) > minSwipeDistance) {
+                    changeDirection(deltaX > 0 ? 'RIGHT' : 'LEFT');
+                }
+            } else {
+                if (Math.abs(deltaY) > minSwipeDistance) {
+                    changeDirection(deltaY > 0 ? 'DOWN' : 'UP');
+                }
+            }
+        });
+
+        // Initialize game when page loads
+        window.addEventListener('load', () => {
+            fetchGameState().then(() => {
+                startGame();
+            });
+        });
+
+        // Handle visibility changes (pause when tab is hidden)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopGame();
+            } else if (gameState && !gameState.game_over) {
+                startGame();
+            }
+        });
     </script>
 </body>
 </html>
