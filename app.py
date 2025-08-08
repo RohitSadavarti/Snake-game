@@ -2,7 +2,7 @@ from flask import Flask, render_template, jsonify, request
 import random
 import string
 import os
-app = Flask(name)
+app = Flask(__name__)
 # Game state - stored in memory
 game_state = {
     'snake': [(5, 5)],
@@ -104,7 +104,7 @@ def health():
 def not_found(error):
     """Handle 404 errors"""
     return "Page not found. Go to the main page: <a href='/'>Play Snake Game</a>", 404
-if name == 'main':
+if name == '__main__':
     # Initialize the game
     reset_game()
     # Get port from environment variable (Render sets this)
