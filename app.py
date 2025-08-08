@@ -104,7 +104,7 @@ def health():
 def not_found(error):
     """Handle 404 errors"""
     return "Page not found. Go to the main page: <a href='/'>Play Snake Game</a>", 404
-if name == '__main__':
+if __name__ == '__main__':
     # Initialize the game
     reset_game()
     # Get port from environment variable (Render sets this)
