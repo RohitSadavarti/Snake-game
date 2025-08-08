@@ -74,6 +74,7 @@
             background: #111;
             margin: 20px 0;
             max-width: 100%;
+            width: 100%;
             height: auto;
         }
         
@@ -195,11 +196,13 @@
             }
             
             canvas {
-                max-width: 95vw;
+                max-width: calc(100vw - 60px);
+                width: calc(100vw - 60px);
             }
 
             .game-container {
                 padding: 20px;
+                max-width: 95vw;
             }
 
             .game-info {
@@ -222,6 +225,16 @@
                 font-size: 20px;
                 min-width: 50px;
                 min-height: 50px;
+            }
+
+            canvas {
+                max-width: calc(100vw - 40px);
+                width: calc(100vw - 40px);
+            }
+
+            .game-container {
+                padding: 15px;
+                max-width: 98vw;
             }
         }
     </style>
@@ -274,52 +287,101 @@
         let gameRunning = false;
         let gameInterval = null;
 
-        // API functions
-        async function fetchGameState() {
-            try {
-                const response = await fetch('/api/game_state');
-                if (!response.ok) throw new Error('Failed to fetch game state');
-                gameState = await response.json();
-                updateDisplay();
-                hideLoading();
-            } catch (error) {
-                console.error('Error fetching game state:', error);
-                showError('Failed to load game. Please refresh the page.');
-            }
+        // Initialize game state locally (no server needed!)
+        function initGameState() {
+            gameState = {
+                snake: [[5, 5]],
+                direction: 'RIGHT',
+                food_pos: [10, 10],
+                food_letter: 'A',
+                collected_letters: [],
+                game_over: false,
+                score: 0
+            };
+            generateNewFood();
         }
 
-        async function moveSnake(direction = null) {
-            if (!gameRunning || (gameState && gameState.game_over)) return;
+        // Generate new food position and letter
+        function generateNewFood() {
+            let newPos;
+            let attempts = 0;
+            do {
+                newPos = [
+                    Math.floor(Math.random() * GRID_WIDTH), 
+                    Math.floor(Math.random() * GRID_HEIGHT)
+                ];
+                attempts++;
+            } while (
+                attempts < 100 && 
+                gameState.snake.some(segment => segment[0] === newPos[0] && segment[1] === newPos[1])
+            );
             
-            try {
-                const response = await fetch('/api/move', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ direction: direction })
-                });
-                
-                if (!response.ok) throw new Error('Failed to move snake');
-                gameState = await response.json();
-                updateDisplay();
-            } catch (error) {
-                console.error('Error moving snake:', error);
-            }
+            gameState.food_pos = newPos;
+            gameState.food_letter = String.fromCharCode(65 + Math.floor(Math.random() * 26)); // Random A-Z
         }
 
-        async function resetGame() {
-            try {
-                const response = await fetch('/api/reset', { method: 'POST' });
-                if (!response.ok) throw new Error('Failed to reset game');
-                gameState = await response.json();
-                updateDisplay();
-                startGame();
-            } catch (error) {
-                console.error('Error resetting game:', error);
-                showError('Failed to reset game. Please refresh the page.');
-            }
+        // Get opposite direction (prevent reversing)
+        function getOppositeDirection(dir) {
+            const opposites = {'UP': 'DOWN', 'DOWN': 'UP', 'LEFT': 'RIGHT', 'RIGHT': 'LEFT'};
+            return opposites[dir];
         }
 
-        // Display functions
+        // FIXED: Move snake locally (no API calls = no lag!)
+        function moveSnake(direction = null) {
+            if (!gameRunning || gameState.game_over) return;
+            
+            // Change direction if provided and not opposite
+            if (direction && direction !== getOppositeDirection(gameState.direction)) {
+                gameState.direction = direction;
+            }
+            
+            // Calculate movement
+            const dx = gameState.direction === 'RIGHT' ? 1 : gameState.direction === 'LEFT' ? -1 : 0;
+            const dy = gameState.direction === 'DOWN' ? 1 : gameState.direction === 'UP' ? -1 : 0;
+            
+            const head = gameState.snake[0];
+            const newHead = [head[0] + dx, head[1] + dy];
+            
+            // Check wall collision
+            if (newHead[0] < 0 || newHead[0] >= GRID_WIDTH || 
+                newHead[1] < 0 || newHead[1] >= GRID_HEIGHT) {
+                gameState.game_over = true;
+                updateDisplay();
+                stopGame();
+                return;
+            }
+            
+            // Check self collision
+            if (gameState.snake.some(segment => segment[0] === newHead[0] && segment[1] === newHead[1])) {
+                gameState.game_over = true;
+                updateDisplay();
+                stopGame();
+                return;
+            }
+            
+            gameState.snake.unshift(newHead);
+            
+            // Check food collision
+            if (newHead[0] === gameState.food_pos[0] && newHead[1] === gameState.food_pos[1]) {
+                gameState.collected_letters.push(gameState.food_letter);
+                gameState.score += 10;
+                generateNewFood();
+            } else {
+                gameState.snake.pop(); // Remove tail
+            }
+            
+            updateDisplay();
+        }
+
+        // Reset game locally
+        function resetGame() {
+            stopGame();
+            initGameState();
+            updateDisplay();
+            startGame();
+        }
+
+        // Display functions (unchanged - these were already good)
         function updateDisplay() {
             if (!gameState) return;
 
@@ -409,7 +471,6 @@
             const gameOverEl = document.getElementById('gameOver');
             if (gameState.game_over) {
                 gameOverEl.style.display = 'block';
-                stopGame();
             } else {
                 gameOverEl.style.display = 'none';
             }
@@ -417,11 +478,6 @@
 
         function hideLoading() {
             document.getElementById('loadingMsg').style.display = 'none';
-        }
-
-        function showError(message) {
-            document.getElementById('loadingMsg').textContent = message;
-            document.getElementById('loadingMsg').style.color = '#ff4757';
         }
 
         // Game control functions
@@ -437,7 +493,7 @@
                 if (gameState && !gameState.game_over) {
                     moveSnake();
                 }
-            }, 500); // Move every 500ms (slower)
+            }, 200); // Faster movement (was 500ms, now 200ms)
         }
 
         function stopGame() {
@@ -448,7 +504,7 @@
             }
         }
 
-        // Event listeners
+        // Event listeners (unchanged)
         document.addEventListener('keydown', (e) => {
             const keyMap = {
                 'ArrowUp': 'UP',
@@ -478,7 +534,7 @@
             }
         });
 
-        // Touch events for mobile
+        // Touch events for mobile (unchanged)
         let touchStartX = 0;
         let touchStartY = 0;
 
@@ -512,9 +568,10 @@
 
         // Initialize game when page loads
         window.addEventListener('load', () => {
-            fetchGameState().then(() => {
-                startGame();
-            });
+            initGameState();
+            updateDisplay();
+            hideLoading();
+            startGame();
         });
 
         // Handle visibility changes (pause when tab is hidden)
